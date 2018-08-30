@@ -134,8 +134,11 @@ func resolveImageClient() client.Client {
 func prepareLogLevel() {
 	level, err := log.ParseLevel(console.Args.LogLevel)
 	if err != nil {
+		log.Errorf("Log error: %v", err)
 		level = log.InfoLevel
 	}
 
 	log.SetLevel(level)
+
+	fmt.Printf("Using log level: %s", log.GetLevel().String())
 }
