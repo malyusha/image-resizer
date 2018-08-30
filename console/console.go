@@ -21,6 +21,7 @@ type argv struct {
 	StorageDir  string
 	ImageClient string
 	SourceDir   string
+	LogLevel    string
 	help        bool
 }
 
@@ -37,6 +38,11 @@ func init() {
 		flag.PrintDefaults()
 	}
 
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "fatal"
+	}
+
 	flag.BoolVar(&Args.help, "h", false, "Show this help")
 	flag.StringVar(&Args.Address, "addr", "127.0.0.1", "Server address")
 	flag.StringVar(&Args.Port, "port", "9898", "Server port")
@@ -46,6 +52,7 @@ func init() {
 	flag.StringVar(&Args.StorageDir, "d", os.Getenv("STORAGE_DIR"), "Storage directory for application. Used only when storage type is local.")
 	flag.StringVar(&Args.ImageClient, "client", os.Getenv("IMAGES_CLIENT"), "Images client for application")
 	flag.StringVar(&Args.SourceDir, "source", os.Getenv("SOURCE_DIR"), "Source images directory for application. Used only when images client type is local.")
+	flag.StringVar(&Args.LogLevel, "log", logLevel, "Log level for application. Allowed types: panic, fatal, error, warn, warning, info, debug.")
 	flag.Parse()
 
 	if Args.help {

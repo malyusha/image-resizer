@@ -73,14 +73,15 @@ func (a *app) HandleImagesRequest() http.HandlerFunc {
 		// First, let's create image instance
 		newImageBytes, err := getDecodedImage(sourceImgBytes, contentType)
 		if err != nil {
-			log.Errorf("Failed to decode image %s", imagePath)
+			log.Warn("Failed to decode image %s.", imagePath, contentType)
+			// Just return source content
 			util.ImageResponse(w, sourceImgBytes)
 			return
 		}
 
-		image := resize.Resize(preset.Width, preset.Height, newImageBytes, resize.Lanczos3)
+		img := resize.Resize(preset.Width, preset.Height, newImageBytes, resize.Lanczos3)
 		buf := new(bytes.Buffer)
-		if err := encodeImageToBytes(image, buf, contentType); err != nil {
+		if err := encodeImageToBytes(img, buf, contentType); err != nil {
 			log.Errorf("Failed to encode resized image %s", imagePath)
 			util.ImageResponse(w, sourceImgBytes)
 			return
@@ -139,11 +140,15 @@ func getDecodedImage(content []byte, contentType string) (image.Image, error) {
 	switch contentType {
 	case "image/png":
 		img, err = png.Decode(r)
+		break
 	case "image/gif":
 		img, err = gif.Decode(r)
-	default:
+		break
+	case "image/jpeg":
 		img, err = jpeg.Decode(r)
-
+		break
+	default:
+		return nil, fmt.Errorf("can't resolve decoder for given content type: %s", contentType)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode image :%v", err)

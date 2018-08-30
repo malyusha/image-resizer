@@ -9,6 +9,7 @@ import (
 	"github.com/malyusha/image-resizer/storage"
 	"github.com/malyusha/image-resizer/console"
 	"github.com/malyusha/image-resizer/client"
+	log "github.com/sirupsen/logrus"
 )
 
 type Application interface {
@@ -60,6 +61,7 @@ func (a *app) ImageClient() client.Client {
 // GetInstance returns new instance of application
 func GetInstance() *app {
 	once.Do(func() {
+		prepareLogLevel()
 		application = &app{
 			router:      mux.NewRouter(),
 			storage:     resolveStorage(),
@@ -88,11 +90,10 @@ func resolveStorage() storage.Storage {
 	}
 
 	switch storageName {
-	case "local":
+	case defaultStorageName:
 		if console.Args.StorageDir == "" {
-			fmt.Println("When using `local` type of storage you must provide storage " +
+			log.Fatalf("When using `local` type of storage you must provide storage " +
 				"directory for storage")
-			os.Exit(1)
 		}
 		s, err := storage.NewLocalStorage(&storage.LocalStorageConfig{
 			Dir: console.Args.StorageDir,
@@ -116,7 +117,7 @@ func resolveImageClient() client.Client {
 	}
 
 	switch clientName {
-	case "local":
+	case defaultImageClientName:
 		if console.Args.SourceDir == "" {
 			fmt.Println("When using `local` type of images client you must provide source " +
 				"directory for static files")
@@ -127,4 +128,14 @@ func resolveImageClient() client.Client {
 	}
 
 	panic(fmt.Sprintf("No resolver for images client %s found", clientName))
+}
+
+// prepares log level for application
+func prepareLogLevel() {
+	level, err := log.ParseLevel(console.Args.LogLevel)
+	if err != nil {
+		level = log.InfoLevel
+	}
+
+	log.SetLevel(level)
 }
