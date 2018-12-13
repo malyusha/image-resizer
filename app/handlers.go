@@ -26,7 +26,7 @@ func (a *app) HandleImagesRequest() http.HandlerFunc {
 	presets, err := LoadPresets(file)
 
 	if err != nil {
-		log.Fatalf("Presets file not found. File - %v", file)
+		log.Fatalf("Error reading presets file.\nFile - %v\nError - %v", file, err)
 	}
 
 	log.Infof("Successfully parsed presets file `%s`", file)
