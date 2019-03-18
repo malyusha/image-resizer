@@ -33,7 +33,7 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 	presets, err := preset.LoadPresets(file)
 
 	if err != nil {
-		logger.Fatalf("Error reading presets file.\nFile - %v\nError - %v", file, err)
+		logger.Fatalf("Error reading presets file. File - %s. %s", file, err)
 	}
 
 	logger.Infof("Successfully parsed presets file `%s`", file)
@@ -66,7 +66,7 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 
 		sourceImgBytes, err := cl.GetImageContent(imagePath)
 		if err != nil {
-			logger.Errorf("Client image error\n%v", err)
+			logger.Errorf("Client image error: %s", err)
 			notFound(w, r)
 			return
 		}

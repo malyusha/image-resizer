@@ -6,5 +6,6 @@ server:
   graceful_timeout: 5
 
 additional:
+  presets_file: /Users/kodix/presets.json
   local_storage_dir: ./storage
   local_client_dir: /Users/kodix/Downloads
