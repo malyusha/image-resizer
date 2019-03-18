@@ -56,7 +56,6 @@ func main() {
 		// Received system signal
 		application.Logger().Warnf("Received %s signal. Stopping...", sig.String())
 		srv.Shutdown()
-		fmt.Println("done")
 	}
 }
 
