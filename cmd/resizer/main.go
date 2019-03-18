@@ -64,9 +64,3 @@ func usage() {
 	_, _ = fmt.Fprintf(flagSet.Output(), "Usage: %s [options]\n", flagSet.Name())
 	flagSet.PrintDefaults()
 }
-
-func exitLoggerFunc(stop chan os.Signal) func(code int) {
-	return func(code int) {
-		stop <- os.Kill
-	}
-}
