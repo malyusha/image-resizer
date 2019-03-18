@@ -42,7 +42,7 @@ func main() {
 	signal.Notify(stop, os.Interrupt)
 	signal.Notify(stop, os.Kill)
 
-
+	// Graceful handle fatal errors in running app
 	logrus.RegisterExitHandler(func() {
 		stop <- os.Interrupt
 	})
