@@ -162,6 +162,8 @@ func (a *app) resolveImageClient() {
 	switch clientName {
 	case "local":
 		c, err = client.NewLocalStorageClient(clientParams)
+	case "http":
+		c, err = client.NewHTTPImageClient(clientParams)
 	}
 
 	if err != nil {

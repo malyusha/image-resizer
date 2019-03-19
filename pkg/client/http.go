@@ -1,14 +1,18 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/malyusha/image-resizer/pkg/dot"
 )
 
 var (
@@ -25,15 +29,21 @@ type HTTPImageClient struct {
 }
 
 // GetImageContent returns image content from remote server by given path.
-func (c *HTTPImageClient) GetImageContent(path string) ([]byte, error) {
-	urlString := c.url(path)
+func (c *HTTPImageClient) GetImageContent(p string) ([]byte, error) {
+	urlString := c.url(p)
 	parsed, err := url.Parse(urlString)
+	var b []byte
+
+	if parsed.Host == "" {
+		return b, errors.New("no host provided in HTTP Image client")
+	}
+
 	if err != nil {
-		return []byte{}, fmt.Errorf("failed to parse valid url: %s", err)
+		return b, fmt.Errorf("failed to parse valid url: %s", err)
 	}
 
 	// Requesting image content from URL
-	resp, err := c.client.Get(fmt.Sprintf("%s/%s", parsed.Host, parsed.Path))
+	resp, err := c.client.Get(urlString)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to load image content: %s", err)
@@ -56,20 +66,30 @@ func (c *HTTPImageClient) FullPath(path string) string {
 }
 
 // url returns URL for given path with host
-func (c *HTTPImageClient) url(path string) string {
-	if strings.Contains(path, "http://") || strings.Contains(path, "https://") || strings.Index(path, "//") == 0 {
-		return path
+func (c *HTTPImageClient) url(p string) string {
+	if strings.Contains(p, "http://") || strings.Contains(p, "https://") || strings.Index(p, "//:") == 0 {
+		return p
+	}
+	if p[0] != '/' {
+		p = "/" + p
 	}
 
-	return fmt.Sprintf("%s/%s", c.Host, path)
+	p = path.Clean(p)
+
+	if c.Host == "" {
+		return p
+	}
+
+
+	return c.Host + p
 }
 
 // NewHTTPImageClient returns new http client for image content retrieve
-func NewHTTPImageClient(host string) *HTTPImageClient {
+func NewHTTPImageClient(config *dot.Map) (*HTTPImageClient, error) {
 	return &HTTPImageClient{
-		Host: host,
+		Host: config.Get("host").String(),
 		client: getClient(),
-	}
+	}, nil
 }
 
 // getClient creates new http client with timeout parameters only once

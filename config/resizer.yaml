@@ -1,6 +1,7 @@
 log_level: info
 
 clear_storage: true
+image_client: http
 
 server:
   address: 127.0.0.1
@@ -13,5 +14,7 @@ service:
     local:
       dir: .tmp/storage
   client:
+    http:
+      host: https://yamaha-motor.ru
     local:
       dir: ./examples/images
