@@ -62,7 +62,7 @@ func main() {
 	}
 }
 
-// Usage prints usage for seeder in CLI
+// Usage prints usage for resizer
 func usage() {
 	_, _ = fmt.Fprintf(flagSet.Output(), "Usage: %s [options]\n", flagSet.Name())
 	flagSet.PrintDefaults()
