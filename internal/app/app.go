@@ -177,5 +177,10 @@ func (a *app) resolveImageClient() {
 	}
 
 	a.logger.Infof(`Resolved image client: "%s"`, clientName)
-	a.imageClient = c
+
+	if a.config.LogImageClient {
+		a.imageClient = client.WithLogger(c, a.logger)
+	} else {
+		a.imageClient = c
+	}
 }

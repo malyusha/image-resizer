@@ -40,6 +40,8 @@ type Config struct {
 	Storage string `yaml:"storage" json:"storage"`
 	// If true will clear storage on bootstrap
 	ClearOnStartup bool `yaml:"clear_storage" json:"clear_storage"`
+	// Log image client activity
+	LogImageClient bool `yaml:"log_image_client" json:"log_image_client"`
 	// Image client type
 	ImageClient string `yaml:"image_client" json:"image_client"`
 	// Server settings

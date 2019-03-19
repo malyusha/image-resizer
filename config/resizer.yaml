@@ -2,9 +2,10 @@ log_level: info
 
 clear_storage: true
 image_client: http
+log_image_client: true
 
 server:
-  address: 127.0.0.1
+  address: 127.0.0.1defa
   port: 9001
   graceful_timeout: 5
 

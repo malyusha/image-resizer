@@ -66,15 +66,11 @@ func (s *Instance) HandleImagesRequest(st storage.Storage, cl client.Client) htt
 
 		sourceImgBytes, err := cl.GetImageContent(imagePath)
 		if err != nil {
-			logger.WithError(err).Error("Client image error")
 			notFound(w, r)
 			return
 		}
 
 		fullPath := cl.FullPath(imagePath)
-		logger.Infof("Found file %s", fullPath)
-		//util.ImageResponse(w, sourceImgBytes)
-
 		contentType := http.DetectContentType(sourceImgBytes)
 		// Otherwise we need to resize image and store it for future requests
 		// First, let's create image instance

@@ -24,7 +24,13 @@ type LoggingClient struct {
 func (c *LoggingClient) GetImageContent(path string) ([]byte, error) {
 	c.Logger.Infof(`Retrieving image content for path "%s"`, path)
 
-	return c.Client.GetImageContent(path)
+	b, err := c.Client.GetImageContent(path)
+
+	if err != nil {
+		c.Logger.WithError(err).Error("Client error")
+	}
+
+	return b, err
 }
 
 func (c *LoggingClient) FullPath(path string) string {
