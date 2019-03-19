@@ -5,7 +5,7 @@ image_client: http
 log_image_client: true
 
 server:
-  address: 127.0.0.1defa
+  address: 127.0.0.1
   port: 9001
   graceful_timeout: 5
 
