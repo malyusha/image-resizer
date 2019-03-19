@@ -8,9 +8,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/malyusha/image-resizer/pkg/app"
-	"github.com/malyusha/image-resizer/pkg/config"
-	"github.com/malyusha/image-resizer/pkg/server"
+	"github.com/malyusha/image-resizer/internal/app"
+	"github.com/malyusha/image-resizer/internal/pkg/config"
+	"github.com/malyusha/image-resizer/internal/pkg/server"
+	"github.com/malyusha/image-resizer/pkg/util"
 )
 
 var (
@@ -32,7 +33,9 @@ func main() {
 	}
 
 	application := app.CreateInstance(config.MustLoad(configFile))
-	srv := server.NewServer(application)
+	srv := server.NewInstance(application)
+
+	application.Logger().Infof("Server startup configuration:\n %s", util.JsonPretty(application.Config()))
 
 	// Start srv
 	errCh := srv.Start()
@@ -49,7 +52,7 @@ func main() {
 
 	select {
 	case err := <-errCh:
-		// Server startup error occurred
+		// Instance startup error occurred
 		application.Logger().Errorf("Error running srv: %s", err.Error())
 		srv.Shutdown()
 	case sig := <-stop:

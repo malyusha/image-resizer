@@ -1,0 +1,12 @@
+# Application configuration file
+log_level: info
+
+server:
+  address: 127.0.0.1
+  port: 8080
+
+service:
+  storage:
+    external:
+      addr: https://example.com/store
+      username: test

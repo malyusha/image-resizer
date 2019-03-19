@@ -15,14 +15,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
 
+	"github.com/malyusha/image-resizer/internal/pkg/server/errors"
 	"github.com/malyusha/image-resizer/pkg/client"
 	"github.com/malyusha/image-resizer/pkg/preset"
-	"github.com/malyusha/image-resizer/pkg/server/errors"
 	"github.com/malyusha/image-resizer/pkg/storage"
 	"github.com/malyusha/image-resizer/pkg/util"
 )
 
-func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.HandlerFunc {
+func (s *Instance) HandleImagesRequest(st storage.Storage, cl client.Client) http.HandlerFunc {
 	logger := s.app.Logger()
 	// TODO: move presets file parsing to startup and enable watcher for changes
 	file := s.app.Config().Get("presets_file").String()
@@ -52,7 +52,7 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 			return
 		}
 
-		logger.Infof("Found requested preset: %s", preset.Name)
+		logger.WithField("preset", preset).Info("Found requested preset")
 
 		hash := strconv.Itoa(int(util.Hash(imagePath)))
 		hashedFileName := fmt.Sprintf("%s/%s/%s", hash, preset.Name, path.Base(imagePath))
@@ -60,18 +60,19 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 		// If we already have resized image in our storage, then we'll just return it
 		if resizedImageBytes, err := st.Get(hashedFileName); err == nil {
 			w.Header().Set("Etag", strconv.Itoa(int(util.Hash(hashedFileName))))
-			s.RespondWithImage(w, resizedImageBytes)
+			s.RespondWithFile(w, resizedImageBytes)
 			return
 		}
 
 		sourceImgBytes, err := cl.GetImageContent(imagePath)
 		if err != nil {
-			logger.Errorf("Client image error: %s", err)
+			logger.WithError(err).Error("Client image error")
 			notFound(w, r)
 			return
 		}
 
-		logger.Infof("Found image %s", imagePath)
+		fullPath := cl.FullPath(imagePath)
+		logger.Infof("Found file %s", fullPath)
 		//util.ImageResponse(w, sourceImgBytes)
 
 		contentType := http.DetectContentType(sourceImgBytes)
@@ -79,9 +80,9 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 		// First, let's create image instance
 		newImageBytes, err := getDecodedImage(sourceImgBytes, contentType)
 		if err != nil {
-			logger.Warn("Failed to decode image %s.", imagePath, contentType)
+			logger.WithField("file", fullPath).Warnf("Failed to decode image %s.", contentType)
 			// Just return source content
-			s.RespondWithImage(w, sourceImgBytes)
+			s.RespondWithFile(w, sourceImgBytes)
 			return
 		}
 
@@ -89,21 +90,24 @@ func (s *Server) HandleImagesRequest(st storage.Storage, cl client.Client) http.
 		buf := new(bytes.Buffer)
 		if err := encodeImageToBytes(img, buf, contentType); err != nil {
 			logger.Errorf("Failed to encode resized image %s", imagePath)
-			s.RespondWithImage(w, sourceImgBytes)
+			s.RespondWithFile(w, sourceImgBytes)
 			return
 		}
 
-		if err := st.Save(hashedFileName, buf.Bytes()); err != nil {
+		savedFile, err := st.Save(hashedFileName, buf.Bytes())
+		if err != nil {
 			logger.Errorf("Failed to save resized image `%s` to storage. Error: %v", imagePath, err)
-			s.RespondWithImage(w, buf.Bytes())
+			s.RespondWithFile(w, buf.Bytes())
 			return
 		}
 
-		s.RespondWithImage(w, buf.Bytes())
+		logger.Infof(`Successfully saved resized file "%s"`, savedFile)
+
+		s.RespondWithFile(w, buf.Bytes())
 	}
 }
 
-func (s *Server) HandleHealthCheck() http.HandlerFunc {
+func (s *Instance) HandleHealthCheck() http.HandlerFunc {
 	type response struct {
 		Status string `json:"status"`
 	}
@@ -126,19 +130,19 @@ func (s *Server) HandleHealthCheck() http.HandlerFunc {
 }
 
 // HandleNotFound serves not found error to client
-func (s *Server) HandleNotFound() http.HandlerFunc {
+func (s *Instance) HandleNotFound() http.HandlerFunc {
 	return notFound
 }
 
-// RespondWithImage writes image meta info into headers
-func (s *Server) RespondWithImage(w http.ResponseWriter, img []byte) {
+// RespondWithFile writes image meta info into headers
+func (s *Instance) RespondWithFile(w http.ResponseWriter, img []byte) {
 	contentType := http.DetectContentType(img)
 	w.Header().Set("Content-Type", contentType)
 	w.Header().Set("Cache-Control", "public, max-age=86400")
 	w.Header().Set("Content-Length", strconv.Itoa(len(img)))
 
 	if _, err := w.Write(img); err != nil {
-		s.app.Logger().Errorf("Unable to write image: %s", err)
+		s.app.Logger().Errorf("Unable to write file: %s", err)
 	}
 }
 

@@ -9,10 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/malyusha/image-resizer/pkg/app"
+	"github.com/malyusha/image-resizer/internal/app"
 )
 
-type Server struct {
+type Instance struct {
 	app          app.Application
 	httpServer   *http.Server
 	router       *mux.Router
@@ -20,13 +20,13 @@ type Server struct {
 }
 
 // App returns application instance of server
-func (s *Server) App() app.Application {
+func (s *Instance) App() app.Application {
 	return s.app
 }
 
 // Start starts server and returns error channel. If any error occurred channel will receive
 // error that can be processed.
-func (s *Server) Start() chan error {
+func (s *Instance) Start() chan error {
 	errChan := make(chan error, 1)
 
 	go s.StartHTTP(errChan)
@@ -35,7 +35,7 @@ func (s *Server) Start() chan error {
 }
 
 // StartHTTP starts HTTP listener on configured address and port.
-func (s *Server) StartHTTP(errChan chan<- error) {
+func (s *Instance) StartHTTP(errChan chan<- error) {
 	log := s.app.Logger()
 	log.Infof("Starting HTTP listener on %s", s.app.Config().Server.Address())
 	s.httpServer = &http.Server{
@@ -52,7 +52,7 @@ func (s *Server) StartHTTP(errChan chan<- error) {
 }
 
 // Shutdowns running servers
-func (s *Server) Shutdown() {
+func (s *Instance) Shutdown() {
 	log := s.app.Logger()
 
 	if atomic.LoadUint32(&s.shuttingDown) == 1 {
@@ -77,9 +77,9 @@ func (s *Server) Shutdown() {
 	log.Info("Shutdown successfully completed")
 }
 
-// NewServer returns new instance of server
-func NewServer(app app.Application) *Server {
-	server := &Server{app: app, router: mux.NewRouter()}
+// NewInstance returns new instance of server
+func NewInstance(app app.Application) *Instance {
+	server := &Instance{app: app, router: mux.NewRouter()}
 	server.registerRoutes()
 
 	return server

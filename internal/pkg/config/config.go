@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
+
+	"github.com/malyusha/image-resizer/pkg/dot"
 )
 
 const (
@@ -19,29 +21,33 @@ const (
 
 type Server struct {
 	// Application HTTP server address
-	HTTPAddr string `yaml:"address"`
+	HTTPAddr string `yaml:"address" json:"address"`
 	// Application HTTP server port
-	HTTPPort string `yaml:"port"`
+	HTTPPort string `yaml:"port" json:"port"`
 	// Duration in seconds for which the server will wait existing connections to finish
-	GracefulTimeout int `yaml:"graceful_timeout"`
+	GracefulTimeout int `yaml:"graceful_timeout" json:"graceful_timeout"`
 }
 
 // Config is the main structure for application configuring
 type Config struct {
 	// ENV type
-	ENV string `yaml:"env"`
+	ENV string `yaml:"env" json:"env"`
 	// Log level
-	LogLevel string `yaml:"log_level"`
+	LogLevel string `yaml:"log_level" json:"log_level"`
 	// Resizing strategy for images. Available strategies can be found in `strategy` package
-	ResizeStrategy string `yaml:"resize_strategy"`
+	ResizeStrategy string `yaml:"resize_strategy" json:"resize_strategy"`
 	// Storage type
-	Storage string `yaml:"storage"`
+	Storage string `yaml:"storage" json:"storage"`
+	// If true will clear storage on bootstrap
+	ClearOnStartup bool `yaml:"clear_storage" json:"clear_storage"`
 	// Image client type
-	ImageClient string `yaml:"image_client"`
+	ImageClient string `yaml:"image_client" json:"image_client"`
 	// Server settings
-	Server Server
-	// Additional dynamically typed configuration
-	Additional map[string]interface{} `yaml:"additional"`
+	Server Server `yaml:"server" json:"server"`
+	// Service dynamically typed configuration
+	Service map[string]interface{} `yaml:"service" json:"service"`
+	// Dynamic configuration
+	dynamic *dot.Map
 }
 
 // AddressString returns HTTP address with port
@@ -59,26 +65,14 @@ func (s *Server) GetGracefulTimeout() time.Duration {
 	return time.Second * timeout
 }
 
-// Get returns *info with value from Additional property. If it's not there default value or nil will be
-// returned
-func (c *Config) Get(key string, defValue ...interface{}) *info {
-	v, ok := c.Additional[key]
-
-	if !ok && len(defValue) == 0 {
-		return &info{}
-	}
-
-	if !ok {
-		v = defValue[0]
-	}
-
-	return &info{Key: key, value: v}
+// Get proxies call to dynamic config struct
+func (c *Config) Get(key string, defValue ...interface{}) *dot.Value {
+	return c.dynamic.Get(key, defValue...)
 }
 
-// Hash checks whether config has a value with given key in Additional property
+// Proxies check to dynamic struct
 func (c *Config) Has(key string) bool {
-	_, ok := c.Additional[key]
-	return ok
+	return c.dynamic.Has(key)
 }
 
 // Check checks validity of config
@@ -102,6 +96,10 @@ func (c *Config) Check() error {
 
 	if c.ImageClient == "" {
 		c.ImageClient = defaultImageClient
+	}
+
+	if len(c.Service) != 0 {
+		c.dynamic = dot.NewMap(c.Service)
 	}
 
 	return nil

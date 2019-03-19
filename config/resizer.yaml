@@ -1,0 +1,17 @@
+log_level: info
+
+clear_storage: true
+
+server:
+  address: 127.0.0.1
+  port: 9001
+  graceful_timeout: 5
+
+service:
+  presets_file: ./examples/presets.json
+  storage:
+    local:
+      dir: .tmp/storage
+  client:
+    local:
+      dir: ./examples/images

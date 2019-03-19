@@ -7,8 +7,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/malyusha/image-resizer/internal/pkg/config"
 	"github.com/malyusha/image-resizer/pkg/client"
-	"github.com/malyusha/image-resizer/pkg/config"
 	"github.com/malyusha/image-resizer/pkg/storage"
 )
 
@@ -94,8 +94,17 @@ func (a *app) ImageClient() client.Client {
 // Initializes application
 func (a *app) init() error {
 	a.createLogger()
-	a.resolveImageClient()
 	a.resolveStorage()
+	a.resolveImageClient()
+
+	if a.config.ClearOnStartup {
+		// Clear storage if requested
+		if err := a.Storage().Purge(); err != nil {
+			return err
+		}
+
+		a.logger.Info("Storage was cleared")
+	}
 
 	return nil
 }
@@ -117,53 +126,54 @@ func (a *app) createLogger() {
 // resolveStorage resolves storage for application from arguments of CLI run
 func (a *app) resolveStorage() {
 	var (
-		s           storage.Storage
-		err         error
-		storageName = a.config.Storage
+		s             storage.Storage
+		err           error
+		storageName   = a.config.Storage
+		storageParams = a.config.Get("storage." + storageName).Map()
 	)
 
 	switch storageName {
 	case "local":
-		c := &storage.LocalStorageConfig{
-			Dir: a.config.Get("local_storage_dir").String(),
-		}
-
-		s, err = storage.NewLocalStorage(c)
+		s, err = storage.NewLocalStorage(storageParams)
 	}
 
 	if err != nil {
-		a.logger.Fatalf("failed to resolve client: %s", err)
+		a.logger.Fatalf("failed to resolve storage: %s", err)
+		return
 	}
 
 	if s == nil {
 		a.logger.Fatalf("No resolver for images client %s found", storageName)
+		return
 	}
 
-	a.logger.Infof(`Using "%s" storage`, storageName)
+	a.logger.Infof(`Resolved storage: "%s"`, storageName)
 	a.storage = s
 }
 
 // resolveImageClient resolves image client for application from arguments of CLI run
 func (a *app) resolveImageClient() {
 	var (
-		c          client.Client
-		err        error
-		clientName = a.config.ImageClient
+		c            client.Client
+		err          error
+		clientName   = a.config.ImageClient
+		clientParams = a.config.Get("client." + clientName).Map()
 	)
 	switch clientName {
 	case "local":
-		directory := a.config.Get("local_client_dir").String()
-		c, err = client.NewLocalStorageClient(directory)
+		c, err = client.NewLocalStorageClient(clientParams)
 	}
 
 	if err != nil {
 		a.logger.Fatalf("failed to resolve client: %s", err)
+		return
 	}
 
 	if c == nil {
 		a.logger.Fatalf("No resolver for images client %s found", clientName)
+		return
 	}
 
-	a.logger.Infof(`Using "%s" image client`, clientName)
+	a.logger.Infof(`Resolved image client: "%s"`, clientName)
 	a.imageClient = c
 }

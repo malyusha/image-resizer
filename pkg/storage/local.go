@@ -7,46 +7,44 @@ import (
 	"path"
 	"sync"
 
+	"github.com/malyusha/image-resizer/pkg/dot"
 	"github.com/malyusha/image-resizer/pkg/util"
 )
 
-type LocalStorageConfig struct {
-	Dir string
-}
-
 type localStorage struct {
 	mux    sync.Mutex
-	config *LocalStorageConfig
+	dir string
 }
 
 const (
 	DirectoryPerm = 0755
 )
 
-// New creates new LocalStorage and initializes it with given config
-func NewLocalStorage(config *LocalStorageConfig) (*localStorage, error) {
+// NewMap creates new LocalStorage and initializes it with given config
+func NewLocalStorage(config *dot.Map) (*localStorage, error) {
 	var (
 		syncError error
+		dir = config.Get("dir").String()
 	)
 
-	if config.Dir == "" {
+	if dir == "" {
 		return nil, errors.New(`when using "local" type of storage you must provide storage directory for files`)
 	}
 
-	if err := createDirectoryIfNotExists(config.Dir); err != nil {
+	if err := createDirectoryIfNotExists(dir); err != nil {
 		return nil, err
 	}
 
-	return &localStorage{config: config}, syncError
+	return &localStorage{dir: dir}, syncError
 }
 
 // Save saves file into file system
-func (s *localStorage) Save(filename string, content []byte) error {
+func (s *localStorage) Save(filename string, content []byte) (string, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if err := checkFile(filename); err != nil {
-		return err
+		return "", err
 	}
 
 	// Creating full path for file
@@ -54,15 +52,15 @@ func (s *localStorage) Save(filename string, content []byte) error {
 
 	// Next, we'll need to create directory for file if it doesn't exist
 	if err := createDirectoryIfNotExists(path.Dir(fullPath)); err != nil {
-		return err
+		return "", err
 	}
 
 	// Writing content to file
 	if err := ioutil.WriteFile(fullPath, content, 0644); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return fullPath, nil
 }
 
 // Get returns data from file existing in file system. If given file doesn't exist it will
@@ -86,9 +84,13 @@ func (s *localStorage) Delete(filename string) error {
 	return nil
 }
 
+func (s *localStorage) Purge() error {
+	return os.RemoveAll(s.Dir())
+}
+
 // Dir returns config base directory of storage. Just a getter for config parameter.
 func (s *localStorage) Dir() string {
-	return s.config.Dir
+	return s.dir
 }
 
 // fullPath returns full path of given filename including base config directory for current storage

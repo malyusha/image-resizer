@@ -1,6 +1,6 @@
 package server
 
-func (s *Server) registerRoutes() {
+func (s *Instance) registerRoutes() {
 	var (
 		storage = s.app.Storage()
 		client = s.app.ImageClient()

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/malyusha/image-resizer/pkg/dot"
 	"github.com/malyusha/image-resizer/pkg/util"
 )
 
@@ -27,7 +28,8 @@ func (c *LocalStorageClient) absPath(filename string) string {
 }
 
 // Returns new LocalStorageClient
-func NewLocalStorageClient(dir string) (*LocalStorageClient, error) {
+func NewLocalStorageClient(config *dot.Map) (*LocalStorageClient, error) {
+	dir := config.Get("dir").String()
 	if dir == "" {
 		return nil, errors.New(`when using "local" type of images client you must provide source directory for static files`)
 	}

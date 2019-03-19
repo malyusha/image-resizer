@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"reflect"
 	"sync"
 	"io/ioutil"
 	"fmt"
@@ -15,6 +16,10 @@ type Preset struct {
 }
 
 type PresetsList []Preset
+
+func (p *Preset) String() string {
+	return fmt.Sprintf("Name: %s, Width: %d, Height: %d", p.Name, p.Width, p.Height)
+}
 
 // Find looks up for Preset in slice of presets and returns first matched by given name
 func (p *PresetsList) Find(name string) (*Preset, bool) {
@@ -66,6 +71,10 @@ func checkPresetsList(data *PresetsList) error {
 
 // Retrieves json from fixture file as slice of structs
 func jsonToSlice(file string, dest interface{}) error {
+	if reflect.ValueOf(dest).Kind() != reflect.Ptr {
+		dest = &dest
+	}
+
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
