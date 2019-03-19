@@ -16,6 +16,6 @@ service:
       dir: .tmp/storage
   client:
     http:
-      host: https://yamaha-motor.ru
+      host: http://lorempixel.com
     local:
       dir: ./examples/images
