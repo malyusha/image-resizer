@@ -2,54 +2,35 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"time"
 
-	"github.com/ghodss/yaml"
-
-	"github.com/malyusha/image-resizer/pkg/dot"
-)
-
-const (
-	defaultAddr           = "0.0.0.0"
-	defaultPort           = "8080"
-	defaultResizeStrategy = "presets"
-	defaultImageClient    = "local"
-	defaultStorage        = "local"
-	defaultENV            = "dev"
+	"github.com/malyusha/image-resizer/internal/pkg/client"
+	"github.com/malyusha/image-resizer/internal/pkg/kvstore"
+	"github.com/malyusha/image-resizer/internal/pkg/logger"
+	"github.com/malyusha/image-resizer/internal/pkg/storage"
 )
 
 type Server struct {
 	// Application HTTP server address
-	HTTPAddr string `yaml:"address" json:"address"`
+	HTTPAddr string `mapstructure:"address"`
 	// Application HTTP server port
-	HTTPPort string `yaml:"port" json:"port"`
+	HTTPPort string `mapstructure:"port"`
 	// Duration in seconds for which the server will wait existing connections to finish
-	GracefulTimeout int `yaml:"graceful_timeout" json:"graceful_timeout"`
+	GracefulTimeout int `mapstructure:"graceful_timeout"`
 }
 
 // Config is the main structure for application configuring
 type Config struct {
-	// ENV type
-	ENV string `yaml:"env" json:"env"`
-	// Log level
-	LogLevel string `yaml:"log_level" json:"log_level"`
-	// Resizing strategy for images. Available strategies can be found in `strategy` package
-	ResizeStrategy string `yaml:"resize_strategy" json:"resize_strategy"`
+	// Log configuration
+	Log *logger.Config
+	// key/value storage configuration
+	KVStorage *kvstore.Config
 	// Storage type
-	Storage string `yaml:"storage" json:"storage"`
-	// If true will clear storage on bootstrap
-	ClearOnStartup bool `yaml:"clear_storage" json:"clear_storage"`
-	// Log image client activity
-	LogImageClient bool `yaml:"log_image_client" json:"log_image_client"`
-	// Image client type
-	ImageClient string `yaml:"image_client" json:"image_client"`
-	// Server settings
-	Server Server `yaml:"server" json:"server"`
-	// Service dynamically typed configuration
-	Service map[string]interface{} `yaml:"service" json:"service"`
-	// Dynamic configuration
-	dynamic *dot.Map
+	Storage *storage.Config
+	// Image client configuration
+	Client *client.Config
+	// Server configuration
+	Server *Server
 }
 
 // AddressString returns HTTP address with port
@@ -67,77 +48,11 @@ func (s *Server) GetGracefulTimeout() time.Duration {
 	return time.Second * timeout
 }
 
-// Get proxies call to dynamic config struct
-func (c *Config) Get(key string, defValue ...interface{}) *dot.Value {
-	return c.dynamic.Get(key, defValue...)
+// Load returns new config struct from config file path
+func Load(path string) (*Config, error) {
+	return load(path)
 }
 
-// Proxies check to dynamic struct
-func (c *Config) Has(key string) bool {
-	return c.dynamic.Has(key)
-}
-
-// Check checks validity of config
-func (c *Config) Check() error {
-	if c.ENV == "" {
-		c.ENV = defaultENV
-	}
-	if c.Server.HTTPAddr == "" {
-		c.Server.HTTPAddr = defaultAddr
-	}
-	if c.Server.HTTPPort == "" {
-		c.Server.HTTPPort = defaultPort
-	}
-	if c.Storage == "" {
-		c.Storage = defaultStorage
-	}
-
-	if c.ResizeStrategy == "" {
-		c.ResizeStrategy = defaultResizeStrategy
-	}
-
-	if c.ImageClient == "" {
-		c.ImageClient = defaultImageClient
-	}
-
-	if len(c.Service) != 0 {
-		c.dynamic = dot.NewMap(c.Service)
-	}
-
-	return nil
-}
-
-// Load loads configuration from file
-func (c *Config) Load(path string) error {
-	var (
-		err error
-		b   []byte
-	)
-
-	b, err = ioutil.ReadFile(path)
-
-	if err != nil {
-		return fmt.Errorf("failed to open config %s\n%s", path, err.Error())
-	}
-
-	if err := yaml.Unmarshal(b, &c); err != nil {
-		return fmt.Errorf("failed to unmarshal config file %s\n%s", path, err)
-	}
-
-	if err := c.Check(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// MustLoad initializes configuration from given config path
-func MustLoad(path string) *Config {
-	var c Config
-
-	if err := c.Load(path); err != nil {
-		panic(err)
-	}
-
-	return &c
+func load(path string) (*Config, error) {
+	return nil, nil
 }

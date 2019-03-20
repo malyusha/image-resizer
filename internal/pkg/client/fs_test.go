@@ -78,7 +78,7 @@ func (s *LocalStorageClientTestSuite) TestReturnsImageContent() {
 		b, err := instance.GetImageContent(name)
 
 		s.True(len(b) > 0, "Returned image content is empty")
-		s.NoError(err, "No error should be returned from `GetImageContent` in `LocalStorageClient`")
+		s.NoError(err, "No error should be returned from `GetImageContent` in `FileSystemClient`")
 	}
 }
 

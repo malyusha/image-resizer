@@ -9,7 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/malyusha/image-resizer/internal/app"
+	"github.com/malyusha/image-resizer/internal/pkg/app"
+	"github.com/malyusha/image-resizer/internal/pkg/config"
 )
 
 type Instance struct {
@@ -22,6 +23,10 @@ type Instance struct {
 // App returns application instance of server
 func (s *Instance) App() app.Application {
 	return s.app
+}
+
+func (s *Instance) Config() *config.Config {
+	return s.app.Config()
 }
 
 // Start starts server and returns error channel. If any error occurred channel will receive

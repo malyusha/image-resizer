@@ -13,14 +13,14 @@ import (
 )
 
 func TestNewHTTPImageClient(t *testing.T) {
-	instance, err := NewHTTPImageClient(newConfig())
+	instance, err := NewHTTPClient(newConfig())
 	assert.Implements(t, (*Client)(nil), instance)
 	assert.NoError(t, err)
 }
 
 func TestHTTPImageClient_FullPath(t *testing.T) {
 	host := "http://lorempixel.com"
-	instance, _ := NewHTTPImageClient(newConfig(map[string]interface{}{"host": host}))
+	instance, _ := NewHTTPClient(newConfig(map[string]interface{}{"host": host}))
 
 	assert.Equal(t, host + "/400/200", instance.FullPath("400/200"))
 	assert.Equal(t, host + "/400/200", instance.FullPath("/400/200"))
@@ -29,7 +29,7 @@ func TestHTTPImageClient_FullPath(t *testing.T) {
 
 func TestHTTPImageClient_GetImageContent(t *testing.T) {
 	server := setupHttpServer()
-	instance, _ := NewHTTPImageClient(newConfig(map[string]interface{}{"host": server.URL}))
+	instance, _ := NewHTTPClient(newConfig(map[string]interface{}{"host": server.URL}))
 	defer server.Close()
 
 	content, err := instance.GetImageContent("any.png")
